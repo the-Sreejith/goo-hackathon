@@ -1,0 +1,17 @@
+# DummE runtime dependencies.
+# Pi-only deps are guarded by platform_machine markers — safe to `pip install -r`
+# on a MacBook for local dev; they'll skip.
+
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.32,<0.33
+pyyaml>=6.0,<7.0
+numpy>=1.26,<2.0
+opencv-python-headless>=4.10,<5.0
+requests>=2.32,<3.0
+pydantic>=2.0,<3.0
+python-dotenv>=1.0,<2.0
+
+# Pi 5 hardware stack — only installs on aarch64
+picamera2; platform_machine == "aarch64"
+adafruit-circuitpython-pca9685; platform_machine == "aarch64"
+piper-tts; platform_machine == "aarch64"

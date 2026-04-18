@@ -1,0 +1,32 @@
+# HSV color ranges for OpenCV (H: 0–179, S: 0–255, V: 0–255).
+# Tuned under typical indoor lighting; re-tune with a desk lamp before demo.
+# Red wraps around 0°, so two masks are OR'd together.
+
+colors:
+  red:
+    ranges:
+      - { h_low: 0,   s_low: 120, v_low: 70, h_high: 10,  s_high: 255, v_high: 255 }
+      - { h_low: 170, s_low: 120, v_low: 70, h_high: 179, s_high: 255, v_high: 255 }
+  blue:
+    ranges:
+      - { h_low: 100, s_low: 120, v_low: 70, h_high: 130, s_high: 255, v_high: 255 }
+  green:
+    ranges:
+      - { h_low: 40,  s_low: 70,  v_low: 50, h_high: 80,  s_high: 255, v_high: 255 }
+
+# Morphological filtering — removes specks, closes holes.
+morphology:
+  kernel_size: 5
+  erode_iterations: 1
+  dilate_iterations: 2
+
+# Ignore contours smaller than this (noise rejection).
+min_contour_area_px: 500
+
+# Camera capture settings.
+camera:
+  width: 640
+  height: 480
+  framerate: 15
+  # Fixed exposure helps HSV repeatability; set null for auto.
+  exposure_us: null

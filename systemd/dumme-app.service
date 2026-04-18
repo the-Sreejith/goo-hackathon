@@ -1,0 +1,23 @@
+[Unit]
+Description=DummE FastAPI app (Pi web UI + orchestrator)
+After=network-online.target dumme-llama.service
+Wants=network-online.target
+# Optional — start app even if llama fails, so /status can report llm_healthy=false
+# Requires=dumme-llama.service
+
+[Service]
+Type=simple
+User=dumme
+Group=dumme
+WorkingDirectory=/home/dumme/goo-hackathon
+EnvironmentFile=-/home/dumme/goo-hackathon/.env
+ExecStart=/home/dumme/goo-hackathon/.venv/bin/uvicorn dumme.app:app \
+    --host 0.0.0.0 \
+    --port 8000
+Restart=on-failure
+RestartSec=3
+# Access I2C (PCA9685) and camera devices.
+SupplementaryGroups=i2c video gpio
+
+[Install]
+WantedBy=multi-user.target

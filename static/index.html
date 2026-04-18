@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DummE</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>DummE</h1>
+      <span id="status-pill" class="pill">idle</span>
+    </header>
+
+    <main>
+      <section class="stream">
+        <img id="camera" src="/stream" alt="camera feed" />
+      </section>
+
+      <section class="controls">
+        <form id="cmd-form">
+          <label for="utterance">Tell DummE what to do</label>
+          <input
+            id="utterance"
+            name="utterance"
+            type="text"
+            placeholder="pick up the red block and put it in the blue cup"
+            autocomplete="off"
+            required
+          />
+          <div class="actions">
+            <button type="submit">Send</button>
+            <button type="button" id="estop-btn" class="danger">E-STOP</button>
+          </div>
+        </form>
+        <pre id="result" aria-live="polite"></pre>
+      </section>
+    </main>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

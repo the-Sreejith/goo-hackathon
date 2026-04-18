@@ -1,0 +1,44 @@
+# PCA9685 servo layout. Pulse widths are microseconds at 50 Hz.
+# SG90 typical: 500–2500us → 0–180°. MG90S same range.
+# home_deg is where each joint rests after `Motion.home()`.
+
+servos:
+  base_rotate:
+    channel: 0          # J1 — rotates the arm shoulder relative to chassis
+    min_us: 500
+    max_us: 2500
+    home_deg: 90
+  shoulder:
+    channel: 1          # J2
+    min_us: 500
+    max_us: 2500
+    home_deg: 90
+  elbow:
+    channel: 2          # J3
+    min_us: 500
+    max_us: 2500
+    home_deg: 90
+  gripper:
+    channel: 3          # J4 — open ~90°, close ~30°
+    min_us: 500
+    max_us: 2500
+    home_deg: 60
+  turntable:
+    channel: 4          # MG90S — rotates the whole chassis
+    min_us: 500
+    max_us: 2500
+    home_deg: 90
+
+# Mechanical joint limits — never exceed, safety clamps before PWM write.
+joint_limits:
+  base_rotate: [0, 180]
+  shoulder: [30, 150]
+  elbow: [20, 160]
+  gripper: [25, 95]
+  turntable: [30, 150]
+
+# Max angular velocity per joint. Slower = less torque spike = less SG90 jitter.
+rate_limit_deg_per_sec: 90
+
+# PWM frequency for the PCA9685. 50 Hz is standard for hobby servos.
+pwm_frequency_hz: 50

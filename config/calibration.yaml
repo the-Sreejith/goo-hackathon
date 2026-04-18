@@ -1,0 +1,26 @@
+# Pixel → joint-angle regression. Populated by `scripts/calibrate.py` after
+# capturing 5+ known-block positions with the physical arm.
+# Do NOT hand-edit; re-run calibration instead.
+
+# Affine fits of the form: output = a0 + a1*pixel_x + a2*pixel_y
+affine:
+  shoulder_deg: [0.0, 0.0, 0.0]
+  elbow_deg:    [0.0, 0.0, 0.0]
+  radius_mm:    [0.0, 0.0, 0.0]
+
+# Constant added to theta when the chassis turntable is rotated.
+# absolute_theta = regressed_theta + turntable_angle * turntable_gain_deg_per_deg
+turntable_offset_deg: 0.0
+turntable_gain_deg_per_deg: 1.0
+
+# Workspace reach envelope in polar coordinates (mm, degrees).
+# Anything outside → orchestrator refuses the pick with a polite message.
+reach:
+  r_min_mm: 50
+  r_max_mm: 200
+  theta_min_deg: -60
+  theta_max_deg: 60
+
+# When was this calibration captured. Useful for "is this stale?" checks.
+captured_at: null
+captured_by: null
