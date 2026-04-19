@@ -15,6 +15,7 @@ doc assumes you've done those.
 - [wiring.md](./wiring.md) — GPIO pinout, power rails, kill switch, camera, servo channel map
 - [testing.md](./testing.md) — test tiers, markers, eval harness, preflight script, coverage gate
 - [demo_script.md](./demo_script.md) — pre-demo checklist, 90-second pitch, on-stage recovery
+- [submission.md](./submission.md) — hackathon submission write-up (copy-paste into Google Docs)
 
 ## Hardware / code map
 
