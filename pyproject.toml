@@ -56,5 +56,26 @@ testpaths = ["tests"]
 markers = [
     "unit: fast isolated tests",
     "integration: require external services",
+    "eval: hits the live llama-server; slow",
+    "hardware: requires Pi + I2C + camera",
 ]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -m 'not eval and not hardware'"
+
+[tool.coverage.run]
+source = ["dumme"]
+branch = true
+omit = [
+    # Still a stub — kept out of the coverage gate until implemented.
+    "dumme/io/mic.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "\\.\\.\\.$",
+]

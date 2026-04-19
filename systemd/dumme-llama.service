@@ -1,5 +1,5 @@
 [Unit]
-Description=DummE llama.cpp server (Gemma 4 E2B)
+Description=DummE llama.cpp server (Gemma 3n E2B)
 After=network-online.target
 Wants=network-online.target
 
@@ -7,11 +7,10 @@ Wants=network-online.target
 Type=simple
 User=dumme
 Group=dumme
-WorkingDirectory=/home/dumme/goo-hackathon
+WorkingDirectory=/home/dumme/dumme
 ExecStart=/home/dumme/llama.cpp/build/bin/llama-server \
-    -m /home/dumme/goo-hackathon/models/gemma-4-e2b-it-Q4_K_M.gguf \
+    -m /home/dumme/dumme/models/gemma-3n-E2B-it-Q4_K_M.gguf \
     --ctx-size 2048 \
-    --n-predict 128 \
     --threads 4 \
     --host 127.0.0.1 \
     --port 8080

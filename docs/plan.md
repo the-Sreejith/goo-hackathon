@@ -96,7 +96,7 @@ Avoid anything heavier than a matchbox.
    │                │                │
 ┌──▼────────┐  ┌────▼─────┐   ┌──────▼──────────┐
 │  llm.py   │  │ vision.py│   │  orchestrator.py│
-│ Gemma +   │  │ picamera2│   │  Sweep → detect │
+│ Gemma 3n  │  │ cv2 UVC  │   │  Sweep → detect │
 │ JSON-only │  │ + HSV    │   │  → pick → place │
 └───────────┘  └──────────┘   └──────┬──────────┘
                                      │
@@ -121,14 +121,14 @@ dumme/
 ├── dumme/
 │   ├── __init__.py
 │   ├── motion.py           # PCA9685 driver, motion primitives
-│   ├── vision.py           # picamera2 + HSV detection
+│   ├── vision.py           # OpenCV UVC + HSV detection
 │   ├── llm.py              # Gemma wrapper, JSON-strict prompt
 │   ├── calibration.py      # pixel → (r, θ) map
 │   └── orchestrator.py     # main command loop
 ├── static/
 │   └── index.html          # single-file browser UI
 ├── models/
-│   └── gemma-4-e2b-it-Q4_K_M.gguf   # primary model (fallback: gemma-3n-E2B-Q4)
+│   └── gemma-3n-E2B-it-Q4_K_M.gguf  # active model (~2.8 GB)
 ├── scripts/
 │   ├── servo_sweep.py      # sanity-check each servo
 │   ├── calibrate.py        # interactive calibration ritual
@@ -183,26 +183,25 @@ class Orchestrator:
 
 ### 3.3 Gemma Model Choice
 
-**Primary: Gemma 4 E2B (Q4_K_M GGUF)** — released April 2, 2026, first-party fit for the prize criteria.
+**Active: Gemma 3n E2B (Q4_K_M GGUF)** — edge-optimised, supported by llama.cpp, validated on Pi 5.
 
 | Aspect | Value |
 |---|---|
-| Model file | `gemma-4-e2b-it-Q4_K_M.gguf` (~1.6 GB) |
-| Effective params | ~2.3B |
-| Multimodal | Text + image + video in (we use text only) |
-| Throughput on 4GB Pi 5 | ~2–6 tokens/sec (enough for ~30-token JSON) |
+| Model file | `gemma-3n-E2B-it-Q4_K_M.gguf` (~2.8 GB; `unsloth` mirror) |
+| Effective params | ~2 B |
+| Multimodal | Text-only on our path |
+| Throughput on 4GB Pi 5 | ~3–5 tokens/sec (plenty for a ~20-token JSON reply) |
 | Context cap | `--ctx-size 2048` (native 128K is too much KV cache for 4GB) |
 
-**Fallback: Gemma 3n E2B Q4** — swap in if Gemma 4 E2B misbehaves under time pressure.
+> The original plan targeted **Gemma 4 E2B** for first-party prize alignment, but that variant isn't available as a published GGUF on Hugging Face at build time. Gemma 3n E2B is the functionally equivalent replacement — same on-device Gemma story, shippable.
 
-**Do NOT use on this Pi**: Gemma 4 E4B (~3GB, no RAM headroom), 26B MoE, 31B Dense.
+**Do NOT use on this Pi**: Gemma 3n E4B (~4 GB, no RAM headroom for app + OS), 26B MoE, 31B Dense.
 
-**llama.cpp launch command**:
+**llama.cpp launch command** (or use `systemctl start dumme-llama.service`):
 ```bash
 llama-server \
-  -m models/gemma-4-e2b-it-Q4_K_M.gguf \
+  -m models/gemma-3n-E2B-it-Q4_K_M.gguf \
   --ctx-size 2048 \
-  --n-predict 128 \
   --threads 4 \
   --host 127.0.0.1 --port 8080
 ```
@@ -313,10 +312,10 @@ All three people land code on `main` **before any real hardware works**.
 - Join P3 during calibration (hour ~4).
 
 **P2 (Perception + LLM)**
-1. `picamera2` live capture → Flask MJPEG stream at `/stream`.
+1. `cv2.VideoCapture(0)` USB UVC capture → FastAPI MJPEG stream at `/stream` (swap in `picamera2` if using a CSI ribbon).
 2. HSV color masks for red, blue, green. Tune under the actual demo lighting.
 3. `Vision.find(color)` returns the largest contour's centroid + area. Reject detections with area < threshold.
-4. Install `llama.cpp` on Pi. Download **Gemma 4 E2B Q4_K_M GGUF** (~1.6 GB) to `models/`. Keep Gemma 3n E2B Q4 as a pre-downloaded fallback on disk.
+4. Install `llama.cpp` on Pi. Download **Gemma 3n E2B Q4_K_M GGUF** (~2.8 GB, via `unsloth` on Hugging Face) to `models/`.
 5. Launch `llama-server` with `--ctx-size 2048 --threads 4`. Wire `LLM.parse()` to hit it over HTTP with the JSON-strict prompt.
 6. Test **20+ phrasings**. Add few-shot examples until ≥95% parse correctly.
 7. Add `piper` TTS for spoken replies.
@@ -374,7 +373,7 @@ All three people land code on `main` **before any real hardware works**.
 | SG90 jitter at rest | High | `release_all()` (PWM=0) after each motion |
 | SG90s overheat during calibration | Medium | Short bursts; arm rests on cardboard support in home pose |
 | Gemma returns malformed JSON | Medium | Strict schema prompt + 1-retry with reminder; regex extract `{...}` |
-| Gemma 4 E2B hits RAM limit on 4GB Pi | Medium | Fall back to Gemma 3n E2B Q4 (pre-downloaded); drop `--ctx-size` to 1024 |
+| Gemma 3n E2B hits RAM limit on 4GB Pi | Medium | Drop `--ctx-size` to 1024; close unused services; check `free -h` |
 | Gemma token throughput too slow | Medium | Show "Thinking…" in UI; keep prompt short; cap `--n-predict 128` |
 | HSV mask misses block under shadow | High | White sheet as workspace + desk lamp for even lighting |
 | Cable pulled during base rotation | Medium | Route through turntable center; leave slack loop |
@@ -387,8 +386,9 @@ All three people land code on `main` **before any real hardware works**.
 
 ## 8. Prize Criteria Fit
 
-- **Gemma 4**: we run **Gemma 4 E2B** (released April 2, 2026) **on-device** via `llama.cpp` on a 4GB Pi 5. First-party alignment with the prize's Gemma 4 preference — no cloud inference, no API calls, structured JSON output driving real-world actuation.
-- **GCP ($5 budget)**: use Vertex AI only as an optional fallback for commands Gemma 4 can't parse, and cache aggressively. An on-device-only story is simpler and probably more compelling — lean on "zero cloud, zero latency, zero privacy compromise" as the narrative.
+- **Gemma**: we run **Gemma 3n E2B** **on-device** via `llama.cpp` on a 4GB Pi 5. On-device Gemma, structured JSON output driving real-world actuation — no cloud, no API calls.
+- **Accessibility / multilingual**: Gemma 3n supports **147 languages**, so the same device serves users across ages and first languages without a cloud translation hop. This is the headline accessibility story for the submission.
+- **GCP ($5 budget)**: use Vertex AI only as an optional fallback for commands Gemma can't parse locally, and cache aggressively. An on-device-only story is simpler and probably more compelling — lean on "zero cloud, zero latency, zero privacy compromise" as the narrative.
 - **Physical AI**: camera + servos + cardboard form factor + real-world pick-and-place.
 - **Track fit** (Accessibility or Open): voice/text command → physical action maps directly to "empowering people with disabilities" or "open-ended AI + hardware".
 
@@ -396,9 +396,9 @@ All three people land code on `main` **before any real hardware works**.
 
 ## 9. Pre-flight Checklist
 
-**Hardware, OS, and model setup are documented in [`PI_SETUP.md`](./PI_SETUP.md).** Complete every step (including the verification checklist in §9 of that doc) **before** hack day starts.
+**Hardware, OS, and model setup are documented in [`pi_setup.md`](./pi_setup.md).** Complete every step (including the verification checklist in §10 of that doc) **before** hack day starts.
 
-**Project-specific readiness** (additional to `PI_SETUP.md`):
+**Project-specific readiness** (additional to `pi_setup.md`):
 - [ ] Repo scaffold (`app.py`, `motion.py`, `vision.py`, `llm.py`, `config.yaml`, `scripts/`) pushed to GitHub.
 - [ ] Cardboard blueprints printed.
 - [ ] Props on hand: cardboard sheets, hot glue, skewers, foam cubes, ping-pong ball, coloured cups, desk lamp, white workspace backdrop.

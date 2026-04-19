@@ -1,8 +1,8 @@
 """HTTP client for a locally-running llama.cpp server.
 
-Default launch (see PI_SETUP.md §6.4):
-    llama-server -m models/gemma-4-e2b-it-Q4_K_M.gguf \\
-        --ctx-size 2048 --n-predict 128 --threads 4 \\
+Default launch (see docs/pi_setup.md §6.4):
+    llama-server -m models/gemma-3n-E2B-it-Q4_K_M.gguf \\
+        --ctx-size 2048 --threads 4 \\
         --host 127.0.0.1 --port 8080
 """
 

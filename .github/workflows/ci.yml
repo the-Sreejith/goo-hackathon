@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install "ruff>=0.6,<1.0" "black>=24.0,<26.0"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: black --check .
+
+  test:
+    # Eval + hardware tiers are excluded by default addopts, so CI runs
+    # unit + integration only — safe without a Pi, a camera, or Gemma.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: |
+          # Pi-only deps (picamera2, adafruit-*, piper-tts) skip via
+          # platform_machine markers on linux/amd64 runners.
+          pip install -e ".[dev]"
+      - name: Pytest + coverage
+        run: pytest -v
+      - name: Coverage XML (for external uploaders)
+        if: always()
+        run: coverage xml || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: ignore

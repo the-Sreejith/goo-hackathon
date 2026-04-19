@@ -1,6 +1,6 @@
 """Run LLM.parse against 20 canonical phrasings and print a pass/fail grid.
 
-Requires `llama-server` to be running (see PI_SETUP.md §6.4). If the server
+Requires `llama-server` to be running (see docs/pi_setup.md §6.4). If the server
 is unreachable, the script skips with a clear message rather than failing.
 
     python -m scripts.prompt_test
@@ -50,7 +50,7 @@ def main() -> int:
     if not client.healthy():
         print(
             f"llama-server not reachable at {client.base_url}. "
-            "Start it first (see PI_SETUP.md §6.4).",
+            "Start it first (see docs/pi_setup.md §6.4).",
             file=sys.stderr,
         )
         return 2

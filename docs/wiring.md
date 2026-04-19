@@ -1,6 +1,6 @@
 # DummE — Wiring Reference
 
-Quick reference for every physical connection. **Read `PI_SETUP.md` §8 before plugging anything in.**
+Quick reference for every physical connection. **Read [`pi_setup.md`](./pi_setup.md) §9 (Power Wiring) before plugging anything in.**
 
 ## Power Rails
 
@@ -50,15 +50,43 @@ SPST toggle wired inline on the **servo V+ line** (between battery + and PCA9685
 
 ## Camera
 
-Pi Camera Module ribbon → CSI port on Pi 5. **Blue tab faces the Ethernet port.** If the ribbon is backwards, `picamera2` will fail to initialize.
+Pick one path; `dumme/vision/camera.py` supports both.
+
+### USB UVC webcam (current build)
+
+Plug into any Pi 5 USB-A port. The kernel exposes it as `/dev/video0`. No
+`raspi-config` step needed. Verify:
+
+```bash
+lsusb                        # "UVC Camera" or "PC Camera" line appears
+v4l2-ctl --list-devices      # shows /dev/video0
+```
+
+OpenCV opens it via `cv2.VideoCapture(0, cv2.CAP_V4L2)` — see `Camera._open`.
+
+### CSI Pi Camera Module (alternative)
+
+Ribbon → CSI port on Pi 5. **Blue tab faces the Ethernet port.** If reversed,
+`picamera2` init fails. Swap `Camera._open` for a `picamera2.Picamera2()`
+instance if you go this route; the rest of the vision stack is unchanged.
 
 ## Chassis Turntable
 
-- MG90S mounted to the lower cardboard disc.
+- MG90S mounted to the lower disc.
 - Servo horn glued + screwed to the upper disc.
 - Skewer/dowel through both disc centers as rotation axis.
 - Low-friction washer between discs (plastic lid works).
 - Cable loop through the center pin — leaves slack for rotation.
+
+## Mechanical frame options
+
+We started with a cardboard + hot-glue build for rapid iteration; it works
+for the electronics but flexes under the arm's own weight and loses
+positional accuracy at the elbow. If you're running this past the
+hackathon, print the parts in `3d-models/sg90-robot-arm-model_files/`
+instead — STL + 3MF ready for any slicer, Fusion 360 sources if you want
+to re-mesh. The servo channel map and `config/servos.yaml` are identical
+for both frames; only mechanical rigidity changes.
 
 ## Optional (stretch)
 
