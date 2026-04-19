@@ -56,5 +56,7 @@ testpaths = ["tests"]
 markers = [
     "unit: fast isolated tests",
     "integration: require external services",
+    "eval: hits the live llama-server; slow",
+    "hardware: requires Pi + I2C + camera",
 ]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -m 'not eval and not hardware'"
