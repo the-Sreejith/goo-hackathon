@@ -153,6 +153,22 @@ button.danger {
   border-color: var(--danger);
 }
 
+button.secondary {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--border);
+}
+
+button.secondary:hover {
+  border-color: var(--accent);
+  filter: none;
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 pre#result {
   margin: 0;
   padding: 12px;
