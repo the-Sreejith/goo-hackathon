@@ -33,22 +33,28 @@ class PCA9685Driver:
 
     def _connect(self) -> None:
         """Lazy-import adafruit so this module loads on non-Pi dev boxes."""
-        raise NotImplementedError(
-            "TODO(P3): import board, busio, adafruit_pca9685; "
-            "instantiate PCA9685 at self.i2c_address; "
-            "set self._pca.frequency = self.pwm_frequency_hz."
+        import board
+        import busio
+        from adafruit_pca9685 import PCA9685
+
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self._pca = PCA9685(i2c, address=self.i2c_address)
+        self._pca.frequency = self.pwm_frequency_hz
+        _log.info(
+            "PCA9685 connected addr=0x%02x freq=%dHz", self.i2c_address, self.pwm_frequency_hz
         )
 
     def set_pulse_us(self, channel: int, pulse_us: float) -> None:
         """Write a pulse width in microseconds to `channel` (0-15)."""
+        if not 0 <= channel <= 15:
+            raise ValueError(f"channel must be 0..15, got {channel}")
         self._last_us[channel] = pulse_us
         if self.mock:
             _log.debug("mock PCA9685 ch=%d pulse_us=%.1f", channel, pulse_us)
             return
-        raise NotImplementedError(
-            "TODO(P3): convert pulse_us → 12-bit duty at self.pwm_frequency_hz, "
-            "write to self._pca.channels[channel].duty_cycle."
-        )
+        period_us = 1_000_000.0 / self.pwm_frequency_hz
+        duty = 0 if pulse_us <= 0 else int(max(0.0, min(1.0, pulse_us / period_us)) * 0xFFFF)
+        self._pca.channels[channel].duty_cycle = duty
 
     def release(self, channel: int) -> None:
         """Zero PWM on `channel` — stops SG90 jitter at rest."""

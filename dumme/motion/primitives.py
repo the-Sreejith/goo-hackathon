@@ -6,11 +6,14 @@ After every multi-joint primitive, call release_all() to stop SG90 jitter.
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from dumme.motion.driver import PCA9685Driver
 from dumme.motion.safety import Safety
 from dumme.utils.logging import get_logger
+
+_STEP_SLEEP_S = 0.15  # per-joint settle delay after a PWM write
 
 _log = get_logger(__name__)
 
@@ -63,31 +66,57 @@ class Motion:
     # ── primitives ────────────────────────────────────────────────────────
     def home(self) -> None:
         """Drive all joints to their configured home_deg, then release PWM."""
-        raise NotImplementedError(
-            "TODO(P3): iterate self.servo_cfg, call self._write_joint(joint, cfg['home_deg']) "
-            "for each; sleep briefly between joints to avoid current spikes; then release_all()."
-        )
+        for joint, cfg in self.servo_cfg.items():
+            self._write_joint(joint, float(cfg["home_deg"]))
+            time.sleep(_STEP_SLEEP_S)
+        self.release_all()
 
     def base_rotate(self, angle_deg: float) -> None:
         """Rotate the base (J1) — the arm's shoulder pivot relative to the chassis."""
-        raise NotImplementedError("TODO(P3): self._write_joint('base_rotate', angle_deg)")
+        self._write_joint("base_rotate", angle_deg)
 
     def turntable_rotate(self, angle_deg: float) -> None:
         """Rotate the whole chassis on its turntable (MG90S)."""
-        raise NotImplementedError("TODO(P3): self._write_joint('turntable', angle_deg)")
+        self._write_joint("turntable", angle_deg)
 
     def pick(self, r_mm: float, theta_deg: float) -> None:
-        """Reach to polar (r, theta), close gripper, lift."""
-        raise NotImplementedError(
-            "TODO(P3): use calibration.pixel_to_polar inverted — compute shoulder+elbow "
-            "for (r, theta), _write_joint each, close gripper, lift shoulder a bit."
-        )
+        """Reach toward theta, close gripper, lift.
+
+        Calibration-free placeholder: base_rotate to theta, drop to a fixed reach
+        pose (shoulder/elbow mid-range), close gripper, lift. `r_mm` is accepted
+        for API parity but ignored until calibration regression lands.
+        """
+        gripper_open = self._home_of("gripper")
+        gripper_close = float(self.servo_cfg["gripper"].get("close_deg", 30.0))
+        reach_shoulder = float(self.servo_cfg["shoulder"].get("reach_deg", 60.0))
+        reach_elbow = float(self.servo_cfg["elbow"].get("reach_deg", 120.0))
+        lift_shoulder = float(self.servo_cfg["shoulder"].get("lift_deg", 110.0))
+
+        self._write_joint("gripper", gripper_open); time.sleep(_STEP_SLEEP_S)
+        self._write_joint("base_rotate", theta_deg); time.sleep(_STEP_SLEEP_S)
+        self._write_joint("shoulder", reach_shoulder); time.sleep(_STEP_SLEEP_S)
+        self._write_joint("elbow", reach_elbow); time.sleep(_STEP_SLEEP_S * 2)
+        self._write_joint("gripper", gripper_close); time.sleep(_STEP_SLEEP_S * 2)
+        self._write_joint("shoulder", lift_shoulder); time.sleep(_STEP_SLEEP_S)
 
     def place(self, r_mm: float, theta_deg: float) -> None:
-        """Reach to polar (r, theta), open gripper, lift, return to safe pose."""
-        raise NotImplementedError(
-            "TODO(P3): mirror of pick, but open gripper at target instead of closing."
-        )
+        """Reach toward theta, open gripper, lift.
+
+        Mirror of pick — calibration-free; r_mm accepted but ignored for now.
+        """
+        gripper_open = self._home_of("gripper")
+        reach_shoulder = float(self.servo_cfg["shoulder"].get("reach_deg", 60.0))
+        reach_elbow = float(self.servo_cfg["elbow"].get("reach_deg", 120.0))
+        lift_shoulder = float(self.servo_cfg["shoulder"].get("lift_deg", 110.0))
+
+        self._write_joint("base_rotate", theta_deg); time.sleep(_STEP_SLEEP_S)
+        self._write_joint("shoulder", reach_shoulder); time.sleep(_STEP_SLEEP_S)
+        self._write_joint("elbow", reach_elbow); time.sleep(_STEP_SLEEP_S * 2)
+        self._write_joint("gripper", gripper_open); time.sleep(_STEP_SLEEP_S)
+        self._write_joint("shoulder", lift_shoulder); time.sleep(_STEP_SLEEP_S)
+
+    def _home_of(self, joint: str) -> float:
+        return float(self.servo_cfg[joint]["home_deg"])
 
     def release_all(self) -> None:
         """Zero PWM on every channel. Call after rest poses to stop jitter."""

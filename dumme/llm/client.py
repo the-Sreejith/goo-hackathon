@@ -37,11 +37,21 @@ class LlamaClient:
 
     def complete(self, req: CompletionRequest) -> str:
         """Return the raw `content` string from the server. Caller parses it."""
-        raise NotImplementedError(
-            "TODO(P2): POST to f'{self.base_url}/completion' with "
-            "{prompt, n_predict, temperature, stop}, return json['content']. "
-            "Use requests.post(..., timeout=self.timeout_s)."
+        payload: dict[str, object] = {
+            "prompt": req.prompt,
+            "n_predict": req.n_predict,
+            "temperature": req.temperature,
+        }
+        if req.stop:
+            payload["stop"] = list(req.stop)
+        resp = requests.post(
+            f"{self.base_url}/completion",
+            json=payload,
+            timeout=self.timeout_s,
         )
+        resp.raise_for_status()
+        data = resp.json()
+        return str(data.get("content", ""))
 
     def healthy(self) -> bool:
         """Quick ping — used by /status to report LLM availability."""
