@@ -17,9 +17,11 @@
 | **4×AA battery holder + 4 AA batteries** *(or 5V 3A UBEC)* | **Separate servo power rail** — mandatory, never share Pi's 5V | ~₹200 |
 | **Jumper wires**: 40× M-F, 40× M-M, 20× F-F | Every connection on the build | ~₹300 |
 | **Mini breadboard** (400-point) | Consolidating grounds + power rails | ~₹150 |
-| **Hot glue gun + 10 sticks** | Cardboard joinery | ~₹400 |
-| **Bamboo skewers or chopsticks** | Internal bracing for arm segments | ~₹50 |
-| **5-ply corrugated cardboard** (~1 sqm) | Frame material | scrap |
+| **Hot glue gun + 10 sticks** | Cardboard joinery (prototype only — see note) | ~₹400 |
+| **Bamboo skewers or chopsticks** | Internal bracing for arm segments (prototype only) | ~₹50 |
+| **5-ply corrugated cardboard** (~1 sqm) | Prototype frame material | scrap |
+
+> **Prototype note** — The cardboard frame is fine for electronics bring-up but flexes under the arm's own weight (~5–10° of joint slop at the elbow). For a sturdy build, print the parts in [`3d-models/sg90-robot-arm-model_files/`](../3d-models/sg90-robot-arm-model_files/) instead: STL + 3MF for any slicer, Fusion 360 sources (`*.f3d`, `*.f3z`) if you want to edit, plus a printable assembly PDF. The servo channel map and `config/servos.yaml` don't change.
 | **SPST toggle switch** (5A rated) | Inline kill switch on servo V+ — you WILL need it | ~₹50 |
 | **M2 / M3 screws + washers** | Servo mounting (most SG90s ship with these — check first) | — |
 

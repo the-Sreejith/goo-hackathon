@@ -387,6 +387,7 @@ All three people land code on `main` **before any real hardware works**.
 ## 8. Prize Criteria Fit
 
 - **Gemma**: we run **Gemma 3n E2B** **on-device** via `llama.cpp` on a 4GB Pi 5. On-device Gemma, structured JSON output driving real-world actuation — no cloud, no API calls.
+- **Accessibility / multilingual**: Gemma 3n supports **147 languages**, so the same device serves users across ages and first languages without a cloud translation hop. This is the headline accessibility story for the submission.
 - **GCP ($5 budget)**: use Vertex AI only as an optional fallback for commands Gemma can't parse locally, and cache aggressively. An on-device-only story is simpler and probably more compelling — lean on "zero cloud, zero latency, zero privacy compromise" as the narrative.
 - **Physical AI**: camera + servos + cardboard form factor + real-world pick-and-place.
 - **Track fit** (Accessibility or Open): voice/text command → physical action maps directly to "empowering people with disabilities" or "open-ended AI + hardware".

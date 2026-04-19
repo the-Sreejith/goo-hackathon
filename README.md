@@ -1,11 +1,13 @@
 # DummE
 
-A cardboard robotic arm on a rotating chassis. Sees its surroundings, understands a natural-language command, and executes it — all running on-device on a Raspberry Pi 5 using **Gemma 3n E2B**.
+A small robotic arm on a rotating chassis. Sees its surroundings, understands a natural-language command **in any of 147 languages**, and executes it — all running on-device on a Raspberry Pi 5 using **Gemma 3n E2B**.
 
-> User: *"pick up the red block and put it in the blue cup"*
+> User: *"pick up the red block and put it in the blue cup"* · *"लाल ब्लॉक उठाओ"* · *"أحضر المكعب الأحمر"*
 > DummE: sweeps with the camera, finds red, picks it, rotates to blue, drops it in, goes home.
 
-Zero cloud, zero latency, zero privacy compromise.
+Zero cloud, zero latency, zero privacy compromise — with first-language access built in.
+
+We prototyped the frame in cardboard (it was fragile; see `docs/submission.md` §6). Printable SG90-arm parts now live under `3d-models/` for a sturdier rebuild on the same electronics + software stack.
 
 ## Quickstart (MacBook dev)
 
@@ -87,7 +89,8 @@ static/         Browser UI (HTML + JS + CSS)
 scripts/        Hardware smoke tests + preflight.sh + calibration + demo run
 tests/          unit + integration + eval + hardware tiers
 systemd/        dumme-llama.service + dumme-app.service
-docs/           All setup / architecture / testing / demo docs
+docs/           All setup / architecture / testing / demo / submission docs
 models/         Gitignored .gguf files (Gemma weights, ~2.8 GB)
+3d-models/      Printable SG90 arm + gripper parts (STL / 3MF / Fusion360)
 .github/        CI workflow (ruff + black + pytest + coverage upload)
 ```

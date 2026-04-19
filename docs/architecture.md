@@ -50,6 +50,7 @@ The only module that knows the pipeline shape. `execute(cmd)` dispatches `home` 
 - `client.LlamaClient` — HTTP client for local llama.cpp server on port 8080.
 - `parser.LLM` — fills the prompt template, extracts JSON, validates, retries once. Falls back to `Command("unknown", ...)`.
 - `schema` — `Command`, `ExecutionResult` dataclasses + `ok()`/`fail()` helpers.
+- **Multilingual**: Gemma 3n covers 147 languages. The prompt template + JSON schema are language-agnostic — the same `Command("pick_and_place", "red", "blue")` comes out whether the user said "pick the red one" or "लाल ब्लॉक उठाओ". No per-locale build.
 
 ### `dumme.calibration/` — Pixel → polar (r, θ)
 Affine regression fit from 5+ hand-captured samples. Used by the orchestrator to turn a detected pixel into a motion target.

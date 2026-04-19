@@ -23,7 +23,7 @@
 
 1. **Introduce the arm** (10s) — "This is DummE. 100% cardboard. 4-DOF arm on a rotating chassis. The Pi 5 you see on the base runs Gemma 3n E2B locally — zero cloud."
 2. **Open the UI** (5s) — show the camera feed, say what we're about to ask for.
-3. **Type the command** (10s) — "pick up the red block and put it in the blue cup".
+3. **Type the command** (10s) — "pick up the red block and put it in the blue cup". (Optional wow beat: repeat it in a second language — *"लाल ब्लॉक उठाओ"* or the judge's first language — to show Gemma 3n's 147-language coverage in one device.)
 4. **Gemma parses** (5s) — briefly show the returned JSON on screen. Mention: on-device, ~1–3 seconds at ~5 tok/s on CPU.
 5. **Arm acts** (45s) — chassis sweeps, finds red, picks, rotates, drops in blue, returns home.
 6. **Close the pitch** (15s) — "Everything you saw ran on the Pi. No cloud, no API calls, no network round-trip. That's the Gemma story at the edge."

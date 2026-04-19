@@ -32,3 +32,4 @@ doc assumes you've done those.
 | `scripts/` | Hardware smoke utilities + `preflight.sh` + prompt eval |
 | `tests/` | Unit + integration + eval + hardware tiers |
 | `systemd/` | `dumme-llama.service`, `dumme-app.service` |
+| `3d-models/` | Printable SG90 arm + gripper parts (STL / 3MF / Fusion 360) |

@@ -14,7 +14,9 @@
 
 Most "AI + robotics" demos today either depend on a cloud LLM (latency, privacy, cost) or run a hard-coded script pretending to understand language. Neither is deployable in the places where a helping hand actually matters — a low-bandwidth clinic, an assistive device in a user's home, a field robot in a farm with spotty internet.
 
-**The question we wanted to answer:** can a 4 GB Raspberry Pi — the cheapest, most widely-available single-board computer — run a *generative* language model, a *perception* stack, and a *motion* stack, together, at a latency that feels alive?
+Accessibility makes this worse: the English-first assumption in most edge-AI assistive tech excludes the majority of the world. A person whose first language is Marathi, Bhojpuri, Tamil, Swahili, or Tagalog shouldn't need to learn English to ask a robot for help.
+
+**The question we wanted to answer:** can a 4 GB Raspberry Pi — the cheapest, most widely-available single-board computer — run a *generative* language model (in the user's own language), a *perception* stack, and a *motion* stack, together, at a latency that feels alive?
 
 **Answer:** yes. And the code fits on an SD card.
 
@@ -42,8 +44,9 @@ Total elapsed time: about 25 seconds of action + ~3 seconds of thinking. No netw
 | Dimension | Why it matters |
 |---|---|
 | **Fully on-device** | Gemma 3n E2B runs via `llama.cpp` with `llama-server` as a local HTTP endpoint. The app talks to `127.0.0.1:8080`. Airplane mode does not break anything. |
-| **Physical, not simulated** | Real cardboard arm, real SG90 + MG90S servos, real PCA9685 over I2C, real USB webcam through V4L2. Not a Unity/Isaac sim. |
-| **Structured grounding** | The LLM is constrained to emit a small JSON schema (`action`, `target_color`, `dest_color`). A JSON-extraction + retry + validation layer turns stochastic text into deterministic control. |
+| **Multilingual by default** | Gemma 3n understands **147 languages**. The same prompt template works whether the user says *"pick up the red block"*, *"लाल ब्लॉक उठाओ"*, or *"أحضر المكعب الأحمر"* — no per-language build, no translation hop, no cloud. This is the accessibility story: one device that meets users in their own language, across age groups and literacy levels. |
+| **Physical, not simulated** | Real SG90 + MG90S servos, real PCA9685 over I2C, real USB webcam through V4L2. Not a Unity/Isaac sim. |
+| **Structured grounding** | The LLM is constrained to emit a small JSON schema (`action`, `target_color`, `dest_color`). A JSON-extraction + retry + validation layer turns stochastic text into deterministic control — regardless of which language the user typed. |
 | **Engineered, not just hacked** | 76 passing tests across 4 tiers, ≥80% unit coverage, CI on GitHub Actions, pre-commit hooks, a 20-utterance eval harness with per-case accuracy, and an on-device preflight script. See §8. |
 | **Reproducible** | `docs/pi_setup.md` is a complete, validated headless-flash-to-running-demo recipe including the WPA3-to-WPA2 gotcha that cost us 30 minutes. |
 
@@ -97,6 +100,7 @@ The code is organized so the orchestrator is the **only** module that knows the 
 ### What we use
 
 - **Model**: `gemma-3n-E2B-it-Q4_K_M.gguf` (≈ 2.8 GB, Unsloth's Hugging Face mirror)
+- **Language coverage**: **147 languages** out of the box — one model, one binary, every major language the user might speak. This is the single biggest accessibility lever: no per-locale build, no cloud translation fallback.
 - **Runtime**: `llama.cpp`, built natively for aarch64 with `cmake -B build -DGGML_NATIVE=ON`
 - **Host**: a `llama-server` systemd unit on the Pi, `127.0.0.1:8080`, auto-restart, `OOMScoreAdjust=500` so a runaway LLM gets killed before the app
 - **Context**: `--ctx-size 2048` (enough for schema + prompt + reply; fits KV cache inside 4 GB)
@@ -128,7 +132,7 @@ This gives the team a regression signal whenever we edit the prompt.
 
 ## 6. Hardware
 
-Built from a single bag of parts at a maker space, no 3D printing, no laser cutter. Total BOM < ₹5,000 before the Pi.
+### BOM
 
 | Part | Role |
 |---|---|
@@ -138,9 +142,25 @@ Built from a single bag of parts at a maker space, no 3D printing, no laser cutt
 | **4× SG90 servos** | Base-rotate, shoulder, elbow, gripper |
 | **1× MG90S servo** | Chassis turntable (rotates the whole arm relative to the floor) |
 | **4× AA battery pack + SPST kill switch** | Separate servo power rail (mandatory — Pi 5V will brown out) |
-| **Cardboard + hot glue + bamboo skewers** | Entire frame + arm links |
 
-**Power discipline** (learned the hard way): Pi on its own 27W USB-C. Servos on a separate 5–6V rail. Common ground. Physical kill switch inline on the servo V+, tested with a multimeter before first power-up. See `docs/wiring.md`.
+### Mechanical: cardboard prototype → 3D-printed arm
+
+We built the first prototype out of cardboard, hot glue, and bamboo skewers to validate the electronics end-to-end. **Candidly, it under-performed**: the cardboard flexed under the arm's own weight, joint play was ~5–10° at the elbow, and the gripper couldn't reliably pinch a ping-pong ball. Every mechanical trick (internal bracing, skewer spines, doubled-up walls) traded weight for rigidity and then ran out of both.
+
+The software stack kept running through all of this — the prototype was a mechanical rigidity problem, not a design problem — but the demo story depends on the arm actually picking the block.
+
+**The fix, packaged for the next iteration:** the repo now includes a complete set of printable SG90-arm parts under `3d-models/sg90-robot-arm-model_files/`:
+
+- `SG90 robot/` — 37 part files covering the base, shoulder/elbow brackets, gripper housing, gripper jaws, gears, bucket + rail
+- `SG90 housing/` — servo-mount brackets and housings (left/right mirrored)
+- `.stl` + `.3mf` for printing, `.f3d` / `.f3z` for Fusion 360 edits
+- A printable assembly PDF (`739870-sg90-robot-arm-...pdf`) as reference
+
+Run the same code, the same config, the same servo channel map — just swap the cardboard frame for the printed parts and the arm moves the way the calibration math expects.
+
+### Power discipline (learned the hard way)
+
+Pi on its own 27W USB-C. Servos on a separate 5–6V rail. Common ground. Physical kill switch inline on the servo V+, tested with a multimeter before first power-up. See `docs/wiring.md`. See `docs/wiring.md`.
 
 ---
 
@@ -182,6 +202,7 @@ A hackathon rarely goes smoothly. A selection:
 4. **Gemma 4 isn't published as GGUF on Hugging Face yet** → we were ready to meet the "Gemma 4" prize criterion but couldn't. **Fix**: swapped to Gemma 3n E2B (same family, edge-optimized, validated by llama.cpp) with an explicit note. Prize story stays: Gemma, on-device, driving a physical robot.
 5. **1.5 GB download over a phone hotspot would take 4 hours** at 100 KB/s. **Fix**: downloaded on a MacBook over real WiFi, then `scp`'d to the Pi on the local hotspot LAN (no cellular data used). Documented as an optimization in pi_setup.
 6. **Pi 5 has no 3.5mm audio jack.** Would have bit us on the voice stretch. **Fix**: USB speaker on the BOM. Documented on the shopping list so nobody shows up without one.
+7. **Cardboard frame flexed under load.** Arm would try to reach a calibrated `(r, θ)` but overshoot by several degrees because the elbow joint had 5–10° of play. **Fix**: printable SG90-arm parts checked into `3d-models/`. The electronics, config, and software are unchanged — swap the frame to fix the demo.
 
 Every one of these went into `docs/pi_setup.md` §11 troubleshooting + Appendix A.
 
@@ -208,6 +229,7 @@ tests/          unit + integration + eval + hardware tiers
 systemd/        dumme-llama.service + dumme-app.service
 docs/           pi_setup, plan, architecture, wiring, testing, demo_script, submission (this file)
 models/         Gemma weights (gitignored, ~2.8 GB)
+3d-models/      Printable SG90 arm + gripper parts (STL / 3MF / Fusion360)
 .github/        CI workflow
 ```
 

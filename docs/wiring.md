@@ -72,11 +72,21 @@ instance if you go this route; the rest of the vision stack is unchanged.
 
 ## Chassis Turntable
 
-- MG90S mounted to the lower cardboard disc.
+- MG90S mounted to the lower disc.
 - Servo horn glued + screwed to the upper disc.
 - Skewer/dowel through both disc centers as rotation axis.
 - Low-friction washer between discs (plastic lid works).
 - Cable loop through the center pin — leaves slack for rotation.
+
+## Mechanical frame options
+
+We started with a cardboard + hot-glue build for rapid iteration; it works
+for the electronics but flexes under the arm's own weight and loses
+positional accuracy at the elbow. If you're running this past the
+hackathon, print the parts in `3d-models/sg90-robot-arm-model_files/`
+instead — STL + 3MF ready for any slicer, Fusion 360 sources if you want
+to re-mesh. The servo channel map and `config/servos.yaml` are identical
+for both frames; only mechanical rigidity changes.
 
 ## Optional (stretch)
 
