@@ -12,13 +12,20 @@ Strategy:
 
 from __future__ import annotations
 
+import json
 import re
 from typing import get_args
 
-from dumme.llm.client import LlamaClient
+from dumme.llm.client import CompletionRequest, LlamaClient
 from dumme.llm.schema import Action, Color, Command
 from dumme.utils.config import load_prompt
 from dumme.utils.logging import get_logger
+
+_UTTERANCE_PLACEHOLDER = "{{UTTERANCE}}"
+_RETRY_REMINDER = (
+    "\n\nREMINDER: return ONLY the JSON object described in the schema. "
+    "No prose, no markdown, no trailing text.\n"
+)
 
 _log = get_logger(__name__)
 
@@ -68,9 +75,45 @@ class LLM:
 
     def parse(self, utterance: str) -> Command:
         """Convert a natural-language utterance into a validated Command."""
-        raise NotImplementedError(
-            "TODO(P2): Fill prompt_template with utterance, call client.complete, "
-            "extract JSON via _extract_json, validate via _coerce_to_command. "
-            "Retry up to self.max_retries times on parse/validation failure. "
-            "Fall back to Command('unknown', None, None)."
-        )
+        base_prompt = self.prompt_template.replace(_UTTERANCE_PLACEHOLDER, utterance)
+        reminder = ""
+        last_content = ""
+
+        for attempt in range(self.max_retries + 1):
+            prompt = base_prompt + reminder
+            try:
+                last_content = self.client.complete(
+                    CompletionRequest(
+                        prompt=prompt,
+                        n_predict=128,
+                        temperature=0.1,
+                        stop=("\n\n", "User:", "```"),
+                    )
+                )
+            except Exception as exc:
+                _log.warning("LLM call failed (attempt %d): %s", attempt, exc)
+                break
+
+            cmd = self._try_coerce(last_content)
+            if cmd is not None:
+                return cmd
+
+            _log.warning(
+                "LLM output invalid on attempt %d: %r", attempt, last_content[:200]
+            )
+            reminder = _RETRY_REMINDER
+
+        return Command(action="unknown", target_color=None, dest_color=None)
+
+    @staticmethod
+    def _try_coerce(content: str) -> Command | None:
+        json_str = _extract_json(content)
+        if not json_str:
+            return None
+        try:
+            payload = json.loads(json_str)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(payload, dict):
+            return None
+        return _coerce_to_command(payload)

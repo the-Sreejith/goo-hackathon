@@ -39,10 +39,34 @@ class Vision:
         """Capture one frame, mask by HSV, return the largest-contour Detection."""
         if color not in self.colors:
             raise KeyError(f"Unknown color '{color}'. Configured: {sorted(self.colors)}")
-        raise NotImplementedError(
-            "TODO(P2): frame = self.camera.frame(); hsv = cv2.cvtColor(frame, "
-            "cv2.COLOR_BGR2HSV); build combined mask by OR'ing every range in "
-            "self.colors[color]; apply erode/dilate per self.morphology; "
-            "cv2.findContours → reject if max-area < self.min_area; "
-            "return Detection(color, cv2.moments centroid, area_px)."
-        )
+
+        import cv2
+        import numpy as np
+
+        frame = self.camera.frame()
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
+        for r in self.colors[color]:
+            lower = np.array([r["h_low"], r["s_low"], r["v_low"]], dtype=np.uint8)
+            upper = np.array([r["h_high"], r["s_high"], r["v_high"]], dtype=np.uint8)
+            mask = cv2.bitwise_or(mask, cv2.inRange(hsv, lower, upper))
+
+        k = int(self.morphology.get("kernel_size", 5))
+        kernel = np.ones((k, k), dtype=np.uint8)
+        mask = cv2.erode(mask, kernel, iterations=int(self.morphology.get("erode_iterations", 1)))
+        mask = cv2.dilate(mask, kernel, iterations=int(self.morphology.get("dilate_iterations", 2)))
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
+        largest = max(contours, key=cv2.contourArea)
+        area = int(cv2.contourArea(largest))
+        if area < self.min_area:
+            return None
+        moments = cv2.moments(largest)
+        if moments["m00"] == 0:
+            return None
+        cx = int(moments["m10"] / moments["m00"])
+        cy = int(moments["m01"] / moments["m00"])
+        return Detection(color=color, pixel_xy=(cx, cy), area_px=area)

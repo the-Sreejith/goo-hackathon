@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from dumme.calibration.regression import Calibration
+from dumme.io.tts import TTS
 from dumme.llm.client import LlamaClient
 from dumme.llm.parser import LLM
 from dumme.motion.driver import PCA9685Driver
@@ -73,8 +74,16 @@ class Services:
         self.vision = Vision(camera=self.camera, vision_cfg=vision_cfg)
         self.calibration = Calibration(raw=calibration_cfg)
         self.llm = LLM(client=LlamaClient())
+        voice_path = os.environ.get("DUMME_PIPER_VOICE")
+        self.tts = TTS(
+            voice_path=voice_path,
+            enabled=os.environ.get("DUMME_TTS", "true").lower() != "false",
+        )
         self.orchestrator = Orchestrator(
-            motion=self.motion, vision=self.vision, calibration=self.calibration
+            motion=self.motion,
+            vision=self.vision,
+            calibration=self.calibration,
+            on_status=self.tts.say,
         )
         _log.info("Services initialized (mock_hardware=%s)", use_mock)
 
