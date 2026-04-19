@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from dumme.calibration.regression import Calibration
+from dumme.io.mic import Mic
 from dumme.io.tts import TTS
 from dumme.llm.client import LlamaClient
 from dumme.llm.parser import LLM
@@ -79,6 +80,10 @@ class Services:
             voice_path=voice_path,
             enabled=os.environ.get("DUMME_TTS", "true").lower() != "false",
         )
+        vosk_model_path = os.environ.get(
+            "DUMME_VOSK_MODEL", str(REPO_ROOT / "models" / "vosk-model-small-en-us")
+        )
+        self.mic = Mic(model_path=vosk_model_path, mock=use_mock)
         self.orchestrator = Orchestrator(
             motion=self.motion,
             vision=self.vision,
@@ -147,6 +152,16 @@ class CommandResponse(BaseModel):
     message: str
 
 
+class ListenRequest(BaseModel):
+    max_seconds: float = 5.0
+
+
+class ListenResponse(BaseModel):
+    ok: bool
+    message: str
+    transcript: str
+
+
 class StatusResponse(BaseModel):
     estop: bool
     base_angle_deg: float
@@ -170,6 +185,22 @@ def post_command(req: CommandRequest, request: Request) -> CommandResponse:
     cmd = services.llm.parse(req.utterance)
     result = services.orchestrator.execute(cmd)
     return CommandResponse(ok=result.ok, message=result.message)
+
+
+@app.post("/listen", response_model=ListenResponse)
+def post_listen(req: ListenRequest, request: Request) -> ListenResponse:
+    """Record from the mic, transcribe, parse, and execute — one-shot push-to-talk."""
+    services: Services = request.app.state.services
+    try:
+        transcript = services.mic.listen(max_seconds=req.max_seconds)
+    except RuntimeError as exc:
+        _log.warning("/listen: mic unavailable: %s", exc)
+        return ListenResponse(ok=False, message=str(exc), transcript="")
+    if not transcript:
+        return ListenResponse(ok=False, message="No speech detected.", transcript="")
+    cmd = services.llm.parse(transcript)
+    result = services.orchestrator.execute(cmd)
+    return ListenResponse(ok=result.ok, message=result.message, transcript=transcript)
 
 
 @app.get("/stream")

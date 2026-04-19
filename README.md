@@ -54,6 +54,36 @@ ssh dumme@dumme.local '
 
 UI lands on `http://dumme.local:8000`, LLM on `http://dumme.local:8080`.
 
+## Voice commands (on-device STT)
+
+DummE can take spoken commands instead of typed ones, transcribed offline by [Vosk](https://alphacephei.com/vosk/) — same privacy guarantees as the rest of the stack.
+
+**Setup:**
+
+```bash
+pip install -r requirements.txt
+# macOS dev: brew install portaudio
+# Pi:        sudo apt install -y libportaudio2
+
+# Download the small English model (~40 MB) into ./models/
+curl -LO https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+unzip vosk-model-small-en-us-0.15.zip -d models/
+mv models/vosk-model-small-en-us-0.15 models/vosk-model-small-en-us
+```
+
+Override the default model location with `DUMME_VOSK_MODEL=/path/to/model`.
+
+**Use it:** click the 🎤 Speak button in the browser UI and talk for up to 5 seconds — the transcript populates the input and is sent through the same LLM → orchestrator pipeline as a typed command.
+
+**API:** `POST /listen {"max_seconds": 5.0}` → `{"ok": bool, "message": str, "transcript": str}`.
+
+**Mock mode** (no mic, no model — useful on the dev MacBook):
+
+```bash
+DUMME_MOCK_HARDWARE=true DUMME_MOCK_UTTERANCE="pick up the red block" \
+    uvicorn dumme.app:app --reload
+```
+
 ## Tests
 
 ```bash

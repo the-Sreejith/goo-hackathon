@@ -5,6 +5,7 @@ const input = document.getElementById("utterance");
 const result = document.getElementById("result");
 const pill = document.getElementById("status-pill");
 const estopBtn = document.getElementById("estop-btn");
+const micBtn = document.getElementById("mic-btn");
 
 function setStatus(state, text) {
   pill.className = "pill " + state;
@@ -33,6 +34,24 @@ form.addEventListener("submit", async (ev) => {
   } catch (err) {
     result.textContent = "Network error: " + err.message;
     setStatus("err", "error");
+  }
+});
+
+micBtn.addEventListener("click", async () => {
+  if (micBtn.disabled) return;
+  micBtn.disabled = true;
+  setStatus("busy", "listening…");
+  result.textContent = "";
+  try {
+    const data = await postJSON("/listen", { max_seconds: 5.0 });
+    if (data.transcript) input.value = data.transcript;
+    result.textContent = JSON.stringify(data, null, 2);
+    setStatus(data.ok ? "ok" : "err", data.ok ? "ok" : "error");
+  } catch (err) {
+    result.textContent = "Network error: " + err.message;
+    setStatus("err", "error");
+  } finally {
+    micBtn.disabled = false;
   }
 });
 

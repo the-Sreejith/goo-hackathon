@@ -11,6 +11,12 @@ requests>=2.32,<3.0
 pydantic>=2.0,<3.0
 python-dotenv>=1.0,<2.0
 
+# Speech-to-text — Vosk ships prebuilt wheels for macOS + aarch64.
+# sounddevice needs the PortAudio shared lib (brew install portaudio /
+# apt install libportaudio2).
+vosk>=0.3.45,<0.4
+sounddevice>=0.4.6,<0.6
+
 # Pi 5 hardware stack — only installs on aarch64
 picamera2; platform_machine == "aarch64"
 adafruit-circuitpython-pca9685; platform_machine == "aarch64"
