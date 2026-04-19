@@ -1,2 +1,2 @@
 # Model weights (.gguf, .bin) live here on the Pi — gitignored.
-# See PI_SETUP.md §6.2 for download URLs.
+# See docs/pi_setup.md §6.2 for download URLs.

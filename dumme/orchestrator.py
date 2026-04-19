@@ -1,6 +1,6 @@
 """The command → action loop. The only module that knows the pipeline shape.
 
-Pseudocode (PLAN.md §3.5):
+Pseudocode (docs/plan.md §3.5):
     1. Parse utterance → Command (already done by caller — we take Command).
     2. If action == home: motion.home(); return ok().
     3. If action == unknown: return fail('did not understand').

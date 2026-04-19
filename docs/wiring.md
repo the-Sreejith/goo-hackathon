@@ -1,6 +1,6 @@
 # DummE — Wiring Reference
 
-Quick reference for every physical connection. **Read `PI_SETUP.md` §8 before plugging anything in.**
+Quick reference for every physical connection. **Read [`pi_setup.md`](./pi_setup.md) §9 (Power Wiring) before plugging anything in.**
 
 ## Power Rails
 
@@ -50,7 +50,25 @@ SPST toggle wired inline on the **servo V+ line** (between battery + and PCA9685
 
 ## Camera
 
-Pi Camera Module ribbon → CSI port on Pi 5. **Blue tab faces the Ethernet port.** If the ribbon is backwards, `picamera2` will fail to initialize.
+Pick one path; `dumme/vision/camera.py` supports both.
+
+### USB UVC webcam (current build)
+
+Plug into any Pi 5 USB-A port. The kernel exposes it as `/dev/video0`. No
+`raspi-config` step needed. Verify:
+
+```bash
+lsusb                        # "UVC Camera" or "PC Camera" line appears
+v4l2-ctl --list-devices      # shows /dev/video0
+```
+
+OpenCV opens it via `cv2.VideoCapture(0, cv2.CAP_V4L2)` — see `Camera._open`.
+
+### CSI Pi Camera Module (alternative)
+
+Ribbon → CSI port on Pi 5. **Blue tab faces the Ethernet port.** If reversed,
+`picamera2` init fails. Swap `Camera._open` for a `picamera2.Picamera2()`
+instance if you go this route; the rest of the vision stack is unchanged.
 
 ## Chassis Turntable
 
